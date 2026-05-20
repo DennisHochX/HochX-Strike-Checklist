@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HochX – Rückbau & Übergabe-Checkliste</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; font-size: 16px; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; }
+
+  .header { background: #1a1a1a; color: #fff; padding: 1.5rem 1.25rem 1.25rem; }
+  .header-logo { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #888; margin-bottom: 0.4rem; }
+  .header h1 { font-size: 20px; font-weight: 600; line-height: 1.3; }
+  .header p { font-size: 13px; color: #aaa; margin-top: 0.3rem; }
+
+  .notice { background: #2a2a2a; border-left: 3px solid #666; margin: 0; padding: 0.9rem 1.25rem; font-size: 13px; color: #bbb; line-height: 1.5; }
+
+  .section { background: #fff; margin: 1rem 0.75rem; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e0; }
+  .section-header { background: #f9f9f7; border-bottom: 1px solid #e5e5e0; padding: 0.85rem 1.1rem; display: flex; align-items: center; gap: 10px; }
+  .section-num { width: 26px; height: 26px; border-radius: 50%; background: #1a1a1a; color: #fff; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .section-title { font-size: 15px; font-weight: 600; }
+  .section-count { margin-left: auto; font-size: 12px; color: #888; }
+
+  .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 0.9rem 1.1rem; border-bottom: 1px solid #f0f0ec; cursor: pointer; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
+  .check-item:last-child { border-bottom: none; }
+  .check-item:active { background: #f5f5f0; }
+  .check-item.checked { background: #f0faf4; }
+  .check-item.checked .check-label { color: #888; text-decoration: line-through; text-decoration-color: #bbb; }
+
+  .checkbox { width: 24px; height: 24px; border-radius: 6px; border: 2px solid #ccc; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .check-item.checked .checkbox { background: #1a9e5a; border-color: #1a9e5a; }
+  .checkmark { display: none; width: 14px; height: 14px; }
+  .check-item.checked .checkmark { display: block; }
+
+  .check-label { font-size: 14px; line-height: 1.5; flex: 1; }
+  .bem-row { margin-top: 6px; }
+  .bem-input { width: 100%; font-size: 13px; border: none; border-bottom: 1px solid #e0e0e0; padding: 4px 2px; background: transparent; color: #555; outline: none; font-family: inherit; }
+  .bem-input::placeholder { color: #ccc; }
+  .bem-input:focus { border-bottom-color: #888; }
+
+  .prod-section { background: #fff; margin: 1rem 0.75rem; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e0; }
+  .prod-header { background: #f9f9f7; border-bottom: 1px solid #e5e5e0; padding: 0.85rem 1.1rem; font-size: 15px; font-weight: 600; }
+  .prod-field { padding: 0.7rem 1.1rem; border-bottom: 1px solid #f0f0ec; display: flex; flex-direction: column; gap: 4px; }
+  .prod-field:last-child { border-bottom: none; }
+  .prod-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+  .prod-input { font-size: 15px; border: none; outline: none; background: transparent; font-family: inherit; color: #1a1a1a; width: 100%; padding: 0; }
+  .prod-input::placeholder { color: #ccc; }
+
+  .progress-bar-wrap { margin: 1rem 0.75rem 0; background: #e5e5e0; border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; background: #1a9e5a; border-radius: 99px; transition: width 0.3s ease; }
+  .progress-label { margin: 0.4rem 0.75rem 0; font-size: 12px; color: #888; text-align: right; }
+
+  .result-section { background: #fff; margin: 1rem 0.75rem; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e0; }
+  .result-header { background: #f9f9f7; border-bottom: 1px solid #e5e5e0; padding: 0.85rem 1.1rem; font-size: 15px; font-weight: 600; }
+  .result-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .result-btn { padding: 1rem; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; font-family: inherit; transition: background 0.15s; -webkit-tap-highlight-color: transparent; }
+  .result-btn:first-child { border-right: 1px solid #e5e5e0; }
+  .result-btn.active-ok { background: #f0faf4; color: #1a9e5a; }
+  .result-btn.active-nok { background: #fff5f5; color: #d94545; }
+  .result-btn:not(.active-ok):not(.active-nok):active { background: #f5f5f0; }
+
+  .maengel-field { padding: 1rem 1.1rem; }
+  .maengel-input { width: 100%; font-size: 14px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 0.7rem 0.9rem; font-family: inherit; outline: none; min-height: 80px; resize: vertical; color: #1a1a1a; }
+  .maengel-input:focus { border-color: #888; }
+
+  .sig-section { background: #fff; margin: 1rem 0.75rem; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e0; }
+  .sig-header { background: #f9f9f7; border-bottom: 1px solid #e5e5e0; padding: 0.85rem 1.1rem; font-size: 15px; font-weight: 600; }
+  .sig-grid { display: grid; grid-template-columns: 1fr 1fr; }
+  .sig-col { padding: 0.9rem 1.1rem; }
+  .sig-col:first-child { border-right: 1px solid #e5e5e0; }
+  .sig-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #888; margin-bottom: 6px; }
+  .sig-name-input { width: 100%; font-size: 14px; border: none; border-bottom: 1px solid #e0e0e0; padding: 4px 0; background: transparent; font-family: inherit; outline: none; color: #1a1a1a; margin-bottom: 10px; }
+  .sig-name-input::placeholder { color: #ccc; }
+  .sig-canvas-wrap { position: relative; }
+  canvas.sig-canvas { width: 100%; height: 90px; border: 1px solid #e0e0e0; border-radius: 8px; display: block; touch-action: none; cursor: crosshair; background: #fafafa; }
+  .sig-clear { font-size: 11px; color: #aaa; margin-top: 4px; text-align: right; cursor: pointer; text-decoration: underline; }
+
+  .actions { padding: 1rem 0.75rem 2rem; display: flex; flex-direction: column; gap: 10px; }
+  .btn-primary { background: #1a1a1a; color: #fff; border: none; border-radius: 10px; padding: 1rem; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s; }
+  .btn-primary:active { opacity: 0.8; }
+  .btn-secondary { background: transparent; color: #1a1a1a; border: 1px solid #ccc; border-radius: 10px; padding: 0.9rem; font-size: 14px; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; -webkit-tap-highlight-color: transparent; }
+  .btn-secondary:active { background: #f0f0ec; }
+
+  .custom-items-section { background: #fff; margin: 1rem 0.75rem; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e0; }
+  .custom-item-add { padding: 0.8rem 1.1rem; display: flex; gap: 8px; border-top: 1px solid #f0f0ec; }
+  .custom-add-input { flex: 1; font-size: 14px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 0.5rem 0.7rem; font-family: inherit; outline: none; }
+  .custom-add-btn { background: #1a1a1a; color: #fff; border: none; border-radius: 8px; padding: 0.5rem 0.9rem; font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap; }
+
+  @media print { .actions { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">HochX Theater und Live Art</div>
+  <h1>Rückbau & Übergabe-Checkliste</h1>
+  <p>Endabnahme nach letzter Vorstellung</p>
+</div>
+
+<div class="notice">
+  Der Rückbau ist Bestandteil der Produktion und muss vor Verlassen des Hauses vollständig abgeschlossen sein. Die Endabnahme erfolgt als gemeinsame Begehung zwischen Gastproduktion und Haustechnik.
+</div>
+
+<div class="prod-section">
+  <div class="prod-header">Produktionsdaten</div>
+  <div class="prod-field">
+    <span class="prod-label">Produktion</span>
+    <input class="prod-input" type="text" placeholder="Titel der Produktion" id="prod-titel">
+  </div>
+  <div class="prod-field">
+    <span class="prod-label">Spielvariante</span>
+    <input class="prod-input" type="text" placeholder="z. B. Parkettbühne / Standard" id="prod-variante">
+  </div>
+  <div class="prod-field">
+    <span class="prod-label">Datum / Uhrzeit Endabnahme</span>
+    <input class="prod-input" type="datetime-local" id="prod-datum">
+  </div>
+  <div class="prod-field">
+    <span class="prod-label">Haustechniker*in</span>
+    <input class="prod-input" type="text" placeholder="Name" id="prod-haus">
+  </div>
+  <div class="prod-field">
+    <span class="prod-label">Anwesend (Gastproduktion)</span>
+    <input class="prod-input" type="text" placeholder="Name(n)" id="prod-gast">
+  </div>
+</div>
+
+<div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+<div class="progress-label" id="progress-label">0 von 0 Punkten erledigt</div>
+
+<div id="checklist-container"></div>
+
+<div class="result-section">
+  <div class="result-header">Ergebnis der Endabnahme</div>
+  <div class="result-options">
+    <button class="result-btn" id="btn-ok" onclick="setResult('ok')">✓ Haus abgenommen</button>
+    <button class="result-btn" id="btn-nok" onclick="setResult('nok')">✗ Mängel festgestellt</button>
+  </div>
+  <div class="maengel-field" id="maengel-wrap" style="display:none; border-top: 1px solid #e5e5e0;">
+    <div class="sig-label" style="margin-bottom:6px;">Mängel / Offene Punkte / Auflagen</div>
+    <textarea class="maengel-input" id="maengel-text" placeholder="Beschreibung der Mängel, Behebung bis: …"></textarea>
+  </div>
+</div>
+
+<div class="sig-section">
+  <div class="sig-header">Unterschriften</div>
+  <div class="sig-grid">
+    <div class="sig-col">
+      <div class="sig-label">Haustechniker*in</div>
+      <input class="sig-name-input" type="text" placeholder="Name" id="sig-name-haus">
+      <canvas class="sig-canvas" id="canvas-haus" width="300" height="180"></canvas>
+      <div class="sig-clear" onclick="clearSig('canvas-haus')">löschen</div>
+    </div>
+    <div class="sig-col">
+      <div class="sig-label">Gastproduktion</div>
+      <input class="sig-name-input" type="text" placeholder="Name" id="sig-name-gast">
+      <canvas class="sig-canvas" id="canvas-gast" width="300" height="180"></canvas>
+      <div class="sig-clear" onclick="clearSig('canvas-gast')">löschen</div>
+    </div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn-primary" onclick="exportPDF()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Als PDF exportieren
+  </button>
+  <button class="btn-secondary" onclick="resetAll()">Liste zurücksetzen</button>
+</div>
+
+<script>
+// ================================================================
+// === HIER ANPASSEN: Produktionsspezifische Rückbaupunkte      ===
+// === Jeden Punkt in Anführungszeichen, mit Komma abgetrennt   ===
+// ================================================================
+const PRODUKTIONSSPEZIFISCH = [
+  "Stoffbahnen von Traversen abgehängt und gefaltet",
+  "Mobile Traversen in Parkposition gefahren und gesichert",
+];
+// ================================================================
+
+const checklistData = [
+  {
+    id: 1, title: "Bühne",
+    items: [
+      "Alle eingebrachten Materialien und Bühnenelemente entfernt",
+      "Temporäre Installationen vollständig zurückgebaut",
+      "Klebebänder und Markierungen vollständig entfernt",
+      "Alle Kabelgummis eingesammelt, aufgewickelt und in Behälter sortiert",
+      "Bestuhlung zurückgebaut in Ursprungszustand",
+      "Mobile Treppe (falls verwendet) abgebaut und eingelagert",
+      "Bühne und Spielfläche besenrein"
+    ]
+  },
+  {
+    id: 2, title: "Technik",
+    items: [
+      "Hausmaterial vollständig an die dafür vorgesehenen Lagerorte zurückgeführt",
+      "Alle Kabel und Adapter fachgerecht aufgewickelt, sortiert und eingelagert",
+      "Alle gemieteten / fremden Kabel vollständig abgeholt",
+      "Scheinwerfer: alle bewegten oder umgehängten Leuchten zurück in Ursprungsposition",
+      "Traversen: alle mobilen Traversen in Ursprungsposition und gesichert",
+      "Farbfilterfolien aussortiert, Rahmen an Lagerorte verräumt",
+      "Lichtpult: Standardshow geladen, Pult resettet, abgedeckt",
+      "Tonpult: Konfiguration zurückgesetzt (Gains, Routing, Patching), abgedeckt",
+      "Netzwerk- und Datenkonfigurationen zurückgesetzt",
+      "MacMini / QLab: Sessions geschlossen, kein Fremdmaterial auf dem System",
+      "FOH-Bereich gereinigt, Arbeitsflächen frei",
+      "Alle Lautsprecher (falls umgestellt) zurück in Ursprungsposition"
+    ]
+  },
+  {
+    id: 3, title: "Sicherheit & Brandschutz",
+    items: [
+      "Alle Rettungswege vollständig frei",
+      "Keine Lagerung von Materialien unter der Tribüne",
+      "Alle Rettungszeichen sichtbar und unverdeckt",
+      "Keine brennbaren Materialien im Spielbereich zurückgelassen",
+      "Alle Brandschutztüren schließen selbstständig",
+      "Feuerlöscher an vorgesehenem Standort, zugänglich"
+    ]
+  },
+  {
+    id: 4, title: "Müll & Restmaterial",
+    items: [
+      "Müll vollständig entsorgt",
+      "Verpackungsmaterial entfernt",
+      "Fremdmaterial vollständig abgeholt",
+      "Garderobe besenrein, kein Fremdmaterial",
+      "Foyer: kein Rückbaurückstand"
+    ]
+  },
+  {
+    id: 5, title: "Lagerung",
+    items: [
+      "Keine Produktionsmaterialien in nicht genehmigten Bereichen gelagert",
+      "Lagerräume (Garderobe, Werkstatt, Keller, Schuppen) geordnet und verschlossen"
+    ]
+  },
+  {
+    id: 6, title: "Produktionsspezifisch",
+    items: PRODUKTIONSSPEZIFISCH
+  }
+];
+
+let state = {};
+
+function buildChecklist() {
+  const container = document.getElementById('checklist-container');
+  container.innerHTML = '';
+  checklistData.forEach(section => {
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.id = 'section-' + section.id;
+
+    const allItems = [...section.items, ...(state['custom_' + section.id] || [])];
+    const checkedCount = allItems.filter((_, i) => state[section.id + '_' + i]).length;
+
+    let itemsHTML = '';
+    allItems.forEach((item, i) => {
+      const checked = state[section.id + '_' + i] ? 'checked' : '';
+      const bem = state['bem_' + section.id + '_' + i] || '';
+      itemsHTML += `
+        <div class="check-item ${checked}" onclick="toggle(${section.id}, ${i})" id="item-${section.id}-${i}">
+          <div class="checkbox">
+            <svg class="checkmark" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 7 6 11 12 3"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div class="check-label">${item}</div>
+            <div class="bem-row" onclick="event.stopPropagation()">
+              <input class="bem-input" type="text" placeholder="Bemerkung …" value="${bem}" onchange="saveBem(${section.id}, ${i}, this.value)">
+            </div>
+          </div>
+        </div>`;
+    });
+
+    const customAddHTML = `
+      <div class="custom-item-add">
+        <input class="custom-add-input" type="text" placeholder="Punkt hinzufügen …" id="custom-input-${section.id}" onkeydown="if(event.key==='Enter') addCustomItem(${section.id})">
+        <button class="custom-add-btn" onclick="addCustomItem(${section.id})">+ Hinzufügen</button>
+      </div>`;
+
+    div.innerHTML = `
+      <div class="section-header">
+        <div class="section-num">${section.id}</div>
+        <div class="section-title">${section.title}</div>
+        <div class="section-count" id="count-${section.id}">${checkedCount}/${allItems.length}</div>
+      </div>
+      ${itemsHTML}
+      ${customAddHTML}
+    `;
+    container.appendChild(div);
+  });
+  updateProgress();
+}
+
+function toggle(sectionId, itemIndex) {
+  const key = sectionId + '_' + itemIndex;
+  state[key] = !state[key];
+  const el = document.getElementById('item-' + sectionId + '-' + itemIndex);
+  el.classList.toggle('checked', state[key]);
+  updateSectionCount(sectionId);
+  updateProgress();
+}
+
+function saveBem(sectionId, itemIndex, value) {
+  state['bem_' + sectionId + '_' + itemIndex] = value;
+}
+
+function addCustomItem(sectionId) {
+  const input = document.getElementById('custom-input-' + sectionId);
+  const text = input.value.trim();
+  if (!text) return;
+  const key = 'custom_' + sectionId;
+  if (!state[key]) state[key] = [];
+  state[key].push(text);
+  input.value = '';
+  buildChecklist();
+}
+
+function updateSectionCount(sectionId) {
+  const section = checklistData.find(s => s.id === sectionId);
+  const allItems = [...section.items, ...(state['custom_' + sectionId] || [])];
+  const checkedCount = allItems.filter((_, i) => state[sectionId + '_' + i]).length;
+  const el = document.getElementById('count-' + sectionId);
+  if (el) el.textContent = checkedCount + '/' + allItems.length;
+}
+
+function updateProgress() {
+  let total = 0, done = 0;
+  checklistData.forEach(section => {
+    const allItems = [...section.items, ...(state['custom_' + section.id] || [])];
+    total += allItems.length;
+    allItems.forEach((_, i) => { if (state[section.id + '_' + i]) done++; });
+  });
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = done + ' von ' + total + ' Punkten erledigt';
+}
+
+function setResult(val) {
+  document.getElementById('btn-ok').className = 'result-btn' + (val === 'ok' ? ' active-ok' : '');
+  document.getElementById('btn-nok').className = 'result-btn' + (val === 'nok' ? ' active-nok' : '');
+  document.getElementById('maengel-wrap').style.display = val === 'nok' ? 'block' : 'none';
+  state.result = val;
+}
+
+function resetAll() {
+  if (!confirm('Liste wirklich zurücksetzen?')) return;
+  state = {};
+  document.getElementById('prod-titel').value = '';
+  document.getElementById('prod-variante').value = '';
+  document.getElementById('prod-datum').value = '';
+  document.getElementById('prod-haus').value = '';
+  document.getElementById('prod-gast').value = '';
+  document.getElementById('sig-name-haus').value = '';
+  document.getElementById('sig-name-gast').value = '';
+  document.getElementById('maengel-text').value = '';
+  clearSig('canvas-haus');
+  clearSig('canvas-gast');
+  setResult(null);
+  buildChecklist();
+}
+
+// Signature pads
+function initSigPad(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  let lastX = 0, lastY = 0;
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e.touches) {
+      return [(e.touches[0].clientX - rect.left) * scaleX, (e.touches[0].clientY - rect.top) * scaleY];
+    }
+    return [(e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY];
+  }
+
+  canvas.addEventListener('mousedown', e => { drawing = true; [lastX, lastY] = getPos(e); });
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; [lastX, lastY] = getPos(e); }, {passive: false});
+
+  function draw(e) {
+    if (!drawing) return;
+    if (e.cancelable) e.preventDefault();
+    const [x, y] = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    [lastX, lastY] = [x, y];
+  }
+
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('touchmove', draw, {passive: false});
+  canvas.addEventListener('mouseup', () => drawing = false);
+  canvas.addEventListener('touchend', () => drawing = false);
+  canvas.addEventListener('mouseleave', () => drawing = false);
+}
+
+function clearSig(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const margin = 15;
+  const pageW = 210;
+  const contentW = pageW - margin * 2;
+  let y = margin;
+
+  function checkPage(needed) {
+    if (y + needed > 280) { doc.addPage(); y = margin; }
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(26, 26, 26);
+  doc.text('HochX – Rückbau & Übergabe-Checkliste', margin, y);
+  y += 8;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Endabnahme nach letzter Vorstellung', margin, y);
+  y += 8;
+
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageW - margin, y);
+  y += 6;
+
+  const prodFields = [
+    ['Produktion', document.getElementById('prod-titel').value],
+    ['Spielvariante', document.getElementById('prod-variante').value],
+    ['Datum / Uhrzeit', document.getElementById('prod-datum').value],
+    ['Haustechniker*in', document.getElementById('prod-haus').value],
+    ['Gastproduktion', document.getElementById('prod-gast').value],
+  ];
+
+  doc.setFontSize(9);
+  prodFields.forEach(([label, val]) => {
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(120, 120, 120);
+    doc.text(label + ':', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(26, 26, 26);
+    doc.text(val || '–', margin + 40, y);
+    y += 6;
+  });
+  y += 4;
+
+  checklistData.forEach(section => {
+    const allItems = [...section.items, ...(state['custom_' + section.id] || [])];
+    checkPage(12);
+
+    doc.setFillColor(26, 26, 26);
+    doc.roundedRect(margin, y - 4, contentW, 8, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(section.id + '  ' + section.title, margin + 3, y + 1);
+    y += 10;
+
+    allItems.forEach((item, i) => {
+      checkPage(8);
+      const checked = state[section.id + '_' + i];
+      const bem = state['bem_' + section.id + '_' + i] || '';
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(checked ? 150 : 26, checked ? 150 : 26, checked ? 150 : 26);
+
+      const boxX = margin;
+      const boxY = y - 3.5;
+      doc.setDrawColor(checked ? 26 : 180, checked ? 158 : 180, checked ? 90 : 180);
+      doc.setFillColor(checked ? 240 : 255, checked ? 250 : 255, checked ? 244 : 255);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(boxX, boxY, 4, 4, 0.5, 0.5, checked ? 'FD' : 'D');
+      if (checked) {
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(0.7);
+        doc.line(boxX + 0.8, boxY + 2, boxX + 1.8, boxY + 3);
+        doc.line(boxX + 1.8, boxY + 3, boxX + 3.3, boxY + 1);
+      }
+
+      const lines = doc.splitTextToSize(item, contentW - 8);
+      doc.setTextColor(checked ? 150 : 26, checked ? 150 : 26, checked ? 150 : 26);
+      doc.text(lines, margin + 6, y);
+      y += lines.length * 4.5;
+
+      if (bem) {
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text('Bem.: ' + bem, margin + 6, y);
+        y += 4.5;
+      }
+      y += 1;
+    });
+    y += 4;
+  });
+
+  checkPage(20);
+  const resultVal = state.result;
+  if (resultVal) {
+    const resultText = resultVal === 'ok' ? '☑ HAUS ABGENOMMEN – Übergabe vollständig erfolgt.' : '☑ MÄNGEL FESTGESTELLT';
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(resultVal === 'ok' ? 26 : 200, resultVal === 'ok' ? 158 : 50, resultVal === 'ok' ? 90 : 50);
+    doc.text(resultText, margin, y);
+    y += 7;
+
+    const maengel = document.getElementById('maengel-text').value;
+    if (maengel && resultVal === 'nok') {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      const lines = doc.splitTextToSize(maengel, contentW);
+      doc.text(lines, margin, y);
+      y += lines.length * 4.5 + 4;
+    }
+  }
+
+  checkPage(50);
+  y += 4;
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageW - margin, y);
+  y += 8;
+
+  const sigHausName = document.getElementById('sig-name-haus').value || 'Haustechniker*in';
+  const sigGastName = document.getElementById('sig-name-gast').value || 'Gastproduktion';
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  doc.text('Haustechniker*in', margin, y);
+  doc.text('Gastproduktion', margin + contentW / 2 + 5, y);
+  y += 4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(26, 26, 26);
+  doc.text(sigHausName, margin, y);
+  doc.text(sigGastName, margin + contentW / 2 + 5, y);
+  y += 6;
+
+  const canvasHaus = document.getElementById('canvas-haus');
+  const canvasGast = document.getElementById('canvas-gast');
+  try {
+    doc.addImage(canvasHaus.toDataURL('image/png'), 'PNG', margin, y, contentW / 2 - 5, 25);
+    doc.addImage(canvasGast.toDataURL('image/png'), 'PNG', margin + contentW / 2 + 5, y, contentW / 2 - 5, 25);
+  } catch(e) {}
+  y += 28;
+
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.2);
+  doc.line(margin, y, margin + contentW / 2 - 5, y);
+  doc.line(margin + contentW / 2 + 5, y, pageW - margin, y);
+  y += 4;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  const titel = document.getElementById('prod-titel').value || 'Produktion';
+  const datum = document.getElementById('prod-datum').value || new Date().toLocaleString('de-DE');
+  doc.text('Original bleibt beim HochX. Kopie erhält die Gastproduktion.', margin, y);
+  y += 4;
+  doc.text('Exportiert: ' + new Date().toLocaleString('de-DE') + ' | ' + titel, margin, y);
+
+  const filename = 'HochX_Rueckbau_' + (titel || 'Checkliste').replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0,10) + '.pdf';
+  doc.save(filename);
+}
+
+initSigPad('canvas-haus');
+initSigPad('canvas-gast');
+buildChecklist();
+</script>
+</body>
+</html>
